@@ -17,11 +17,14 @@ import numpy as np
 import pandas as pd
 import pymc3 as pm
 
+from master import *
+
 from scipy.stats import norm, lognorm, poisson
 #from localsearch import *
 
 eps_sigma_sq = 1
 v=1
+
 
 def simulate_data_normal(N, B):
     """
@@ -68,34 +71,16 @@ def normal_permute(df,formula, I, T):
     #P = eye(m)
     p = [i for i in range(m)]
     
-    if family == 'Normal':
-            with pm.Model() as P_model:
-                pm.glm.GLM.from_formula(formula, df, family = pm.glm.families.Normal())
-                trace = pm.sample(I, chains = 1, tune = 0, progress_bar = False)
-                print("Sampling done.")
-                
-            #trace = glm_mcmc_inference(df, formula, pm.glm.families.Normal(), I)
-            beta_names = ['Intercept']
-            beta_names.extend(formula.split(' ~ ')[1].split(' + '))
-            B = np.transpose([trace.get_values(s)[-1] for s in beta_names])
-            sd = trace.get_values('sd')[-1]
-    
-            x = np.matmul(A, B)
-    
-            likelihood = sum([np.log(l) for l in norm.pdf(x, y, sd)])
-            print(likelihood)
-    
-    elif family == 'Poisson':
-        trace = glm_mcmc_inference(df, formula, pm.glm.families.Poisson(), I)
-        beta_names = ['Intercept']
-        beta_names.extend(formula.split(' ~ ')[1].split(' + '))
-        B = np.transpose([trace.get_values(s)[-1] for s in beta_names])
-        mu = trace.get_values('mu')[-1]
-        
-        x = np.matmul(A, B)
-        
-        likelihood = np.sum([np.log(l) for l in poisson.pdf(x, mu)])
-        print(likelihood)
+    trace = glm_mcmc_inference(df, formula, pm.glm.families.Normal(), I)
+    beta_names = ['Intercept']
+    beta_names.extend(formula.split(' ~ ')[1].split(' + '))
+    B = np.transpose([trace.get_values(s)[-1] for s in beta_names])
+    sd = trace.get_values('sd')[-1]
+
+    x = np.matmul(A, B)
+
+    likelihood = sum([np.log(l) for l in norm.pdf(x, y, sd)])
+    print(likelihood)
      
     y_t = list(y)
     for t in range(T): 
@@ -131,14 +116,7 @@ def permute_search_normal(df,formula, I, T):
         if t > 0:
             new_y = build_permutation(P[t-1], list(df_x[y1]))
             df_x[y1] = new_y
-        B[t], P[t], L[t] = normal_permute(df_x,formula, 'Normal', 2000, I)
+        B[t], P[t], L[t] = normal_permute(df_x, formula, 2000, I)
         
     return([B, P, L])
     
-'''  
-df1 = simulate_data_normal(40, [2, -1, 3])
-real_y = list(df1['y'])
-df1['y'] = np.random.choice(real_y, 40, replace = False)
-B, P, L = permute_search_normal(df1, 'y ~ x1 + x2 + x3', 1000, 10)
-'''
-

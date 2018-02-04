@@ -24,6 +24,7 @@ from scipy.stats import norm, lognorm, poisson, binom
 eps_sigma_sq = 1
 v=1
 
+
 def simulate_data_logistic(N, B):
     """
     Simulate a random dataset using a noisy
