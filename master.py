@@ -12,9 +12,6 @@ import pymc3 as pm
 import scipy as sp
 import math
 
-from perm_sample_norm import *
-from perm_sample_binom import *
-from perm_sample_poisson import *
 
 def glm_mcmc_inference(df, formula, family, I):
     """
@@ -46,4 +43,10 @@ def build_permutation(p, arr):
     for i in range(l):
             new[i] = arr[p[i]]
     return(new)
+    
+from perm_sample_norm_02 import *
+from perm_sample_binom_03 import *
+from perm_sample_poisson_02 import *
+    
+
     
