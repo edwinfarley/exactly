@@ -61,8 +61,8 @@ def simulate_data_normal(N, B):
 
 def normal_permute(x, y, p, T, m, sd):
 
-    likelihood = sum([np.log(l) for l in norm.pdf(x, y, sd)])
-    print(likelihood)
+    #likelihood = sum([np.log(l) for l in norm.pdf(x, y, sd)])
+    #print(likelihood)
      
     y_t = list(y)
     for t in range(T): 
@@ -80,36 +80,44 @@ def normal_permute(x, y, p, T, m, sd):
             temp = p[i]
             p[i] = p[j]
             p[j] = temp            
-    #Returns log likelihood        
-    return([p, sum([np.log(l) for l in norm.pdf(x, y_t, sd)])])
+    #Returns log likelihood       
+    #sum([np.log(l) for l in norm.pdf(x, y_t, sd)])
+    return(p)
             
-def permute_search_normal(df,formula, N, I, T):
+def permute_search_normal(df, block, formula, N, I, T):
     #N: Number of permutations
     #I: Number of samples in sampling Betas
     #T: Number of iterations in row swapping phase
     
     #Initialize output arrays
-    #B: Betas for T samplings
-    B = [0 for i in range(N)] 
     #P: Permutations after I iterations for each set of Betas
-    P = list(B)
     #L: Log Likelihoods of permutations in P with Betas in B
-    L = list(B)
+    #L = list(B)
     
     y1 = formula.split(' ~ ')[0]    
     
-    A = pd.DataFrame.as_matrix(df.drop(str(y1), 1))
+    block_df = df[block[0]:block[1]]
+    A = pd.DataFrame.as_matrix(block_df.drop(str(y1), 1))
     m, n = len(A[:,0]), len(A[0,:])+1
+    print(m,n)
     A = sp.sparse.coo_matrix(np.concatenate([np.ones((m, 1)), A], 1))
     
     #N iterations
-    P[-1] = [i for i in range(m)]*N
+    
+    #P: Permutations after I iterations for each set of Betas
+    P = list(range(block[0], block[1]))*N
+    #B: Betas for T samplings
+    B = [0 for i in range(n)]*N
     for t in range(N):
         #Input is the data in the order of the last permutation
-        new_y = build_permutation(P[(t*m):(t*(m+1))], list(df[y1]))
-        df[y1] = new_y   
+        if t == 0:
+            new_y = build_permutation(P[0:m], list(block_df[y1]))
+        else:
+            new_y = build_permutation(P[((t-1)*m):(t*m)], list(block_df[y1]))
+            
+        df[y1][block[0]:block[1]] = new_y   
         
-        y = pd.DataFrame.as_matrix(df[str(y1)])
+        y = pd.DataFrame.as_matrix(block_df[str(y1)])
         
         #Sample Betas and search for permutations
         trace = glm_mcmc_inference(df, formula, pm.glm.families.Normal(), I)
@@ -119,9 +127,12 @@ def permute_search_normal(df,formula, N, I, T):
         sd = trace.get_values('sd')[-1]
         
         x = A * b
+
+        B[((t)*n):((t+1)*n)] = b
+        if t == 0:
+            P[0:m] = normal_permute(x, y, list(P[0:m]), T, m, sd)
+        else:                
+            P[((t)*m):((t+1)*m)] = normal_permute(x, y, list(P[((t-1)*m):(t*m)]), T, m, sd)
         
-        B[t] = b
-        P[(t*(m+1)):(t*(m+2))], L[t] = normal_permute(x, y, list(P[t-1]), T, m, sd)
-        
-    return([B, P, L])
+    return([B, P])
     
