@@ -44,9 +44,10 @@ def build_permutation(p, arr):
             new[i] = arr[p[i]]
     return(new)
     
-from perm_sample_norm_03 import *
-from perm_sample_binom_03 import *
-from perm_sample_poisson_02 import *
+#from perm_sample_norm_03 import *
+from perm_sample_norm_r import *
+from perm_sample_binom_r import *
+from perm_sample_poisson_r import *
     
 
     

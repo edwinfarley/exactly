@@ -92,14 +92,15 @@ def permute_search_normal(df, block, formula, N, I, T):
     #Initialize output arrays
     #P: Permutations after I iterations for each set of Betas
     #L: Log Likelihoods of permutations in P with Betas in B
-    #L = list(B)
 
     y1 = formula.split(' ~ ')[0]
-
-    block_df = df[block[0]:block[1]]
+    covariates = formula.split(' ~ ')[1].split(' + ')
+    block_df = pd.DataFrame()
+    for col in covariates:
+        block_df.loc[:, col] = df[col][block[0]:block[1]]
+    block_df.loc[:, y1] = df[y1][block[0]:block[1]]
     A = pd.DataFrame.as_matrix(block_df.drop(str(y1), 1))
     m, n = len(A[:,0]), len(A[0,:])+1
-    print(m,n)
     A = sp.sparse.coo_matrix(np.concatenate([np.ones((m, 1)), A], 1))
 
     #N iterations
