@@ -81,9 +81,9 @@ def permute_search_pois(df, block, formula, Y, N, I, T):
     block_df = pd.DataFrame(df[block[0]:block[1]]).reset_index(drop=True)
 
     X_missing = np.where(np.isnan(block_df[covariates[0]]))[0]
-    num_missing = len(X_missing)
-    num_finite = len(block_df) - num_missing
-    print(X_missing)
+    num_X_missing = len(X_missing)
+    num_finite = len(block_df) - num_X_missing
+    num_Y_missing = sum(np.isnan(block_df[y1]))
     m, n = len(block_df), len(block_df.columns)+1
 
     #Remove NaNs outside of current block
@@ -132,14 +132,18 @@ def permute_search_pois(df, block, formula, Y, N, I, T):
         B[((t)*n):((t+1)*n)] = b
         if t == 0:
             P_t, new_y = poisson_permute(A, b, np.array(block_df[y1]), np.arange(0, m), T, m, Y)
-            if num_missing:
-                P[0, :] = P_t[:-num_missing]
+            if num_X_missing:
+                P[0, :] = P_t[:-num_X_missing]
+            elif num_Y_missing:
+                P[0, :] = P_t[:-num_Y_missing]
             else:
-                P[0, :] = P_t[np.where(np.isfinite(new_y))]
+                P[0, :] = P_t
         else:
             P_t, new_y = poisson_permute(A, b, np.array(new_y), P_t, T, m, Y)
-            if num_missing:
-                P[t, :] = P_t[:-num_missing]
+            if num_X_missing:
+                P[t, :] = P_t[:-num_X_missing]
+            elif num_Y_missing:
+                P[t, :] = P_t[:-num_Y_missing]
             else:
-                P[t, :] = P_t[np.where(np.isfinite(new_y))]
+                P[t, :] = P_t
     return([B, P])
