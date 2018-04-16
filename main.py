@@ -24,7 +24,8 @@ if __name__ == '__main__':
     df2['block'] = [0,0,1,1,1,1,2,2,2,2,2,2,3,3,4,4,5,5,5]
     df1 = df1.drop('y',1)
     df1 = df1.drop(19, 0)
-    df1['block'] = [0,0,1,1,1,1,2,2,2,2,2,3,3,3,4,4,5,5,5]
+    df1 = df1.drop(18, 0)
+    df1['block'] = [0,0,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,5]
     
     #sample(df1, df2, formula, family, N, I, T, burnin, interval)
-    F, P = sample(df1, df2, 'y ~ x1 + x2 + y1', 'Normal', 3, 20, 20, 3, 1)
+    F, P = sample(df1, df2, 'y ~ x1 + x2 + y1', 'Normal', 3, 20, 20, 0, 1)

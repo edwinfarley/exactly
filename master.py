@@ -37,16 +37,20 @@ def glm_mcmc_inference(df, formula, family, I):
         return(trace)
 
 def build_permutation(p, arr):
-    new = [0 for i in range(sum(np.isfinite(p)))] 
+    new = [np.nan for i in range(sum(np.isfinite(p)))] 
     l = len(p)
     #base = min(p[p>=0])
     base = 0
+    nans = 0
     for i in range(l):
-        try:
-            ix = int(p[i])
-            new[i] = arr[ix-base]
-        except:
-            pass
+        if np.isfinite(p[i]):
+            if p[i] < 0:
+                new[i-nans] = -1
+            else:
+                ix = int(p[i])
+                new[i-nans] = arr[ix-base]
+        else:
+            nans = nans+1
             
     return(new)
     
@@ -138,19 +142,19 @@ def sample(df1, df2, formula, family, N, I, T, burnin, interval):
     if family.lower() == 'normal':
         for i in range(0, len(blocks)):
             B, P = permute_search_normal(merged_df, [blocks[i][0],blocks[i][1]],\
-                                         formula, Y, N, I, T, burnin, 1)
+                                         formula, Y, N, I, T, burnin, interval)
             B_dict[str(i)] = B
             P_dict[str(i)] = P
     elif family.lower() == 'logistic':
         for i in range(0, len(blocks)):
             B, P = permute_search_logistic(merged_df, [blocks[i][0],blocks[i][1]],\
-                                         formula, Y, N, I, T)
+                                         formula, Y, N, I, T, burnin, interval)
             B_dict[str(i)] = B
             P_dict[str(i)] = P
     elif family.lower() == 'poisson':
         for i in range(0, len(blocks)):
             B, P = permute_search_pois(merged_df, [blocks[i][0],blocks[i][1]],\
-                                         formula, Y, N, I, T)
+                                         formula, Y, N, I, T, burnin, interval)
             B_dict[str(i)] = B
             P_dict[str(i)] = P
             
@@ -162,10 +166,12 @@ def sample(df1, df2, formula, family, N, I, T, burnin, interval):
             new_P = blocks[block_count][0] + P_dict[key][i, :]
             full_P_i = np.concatenate((full_P_i, new_P.astype(int)), 0)
             block_count = block_count + 1
-        temp = index.take(full_P_i.astype(int))
-        full_P[i, :] = build_permutation(true_index, temp)
+        #temp = index.take(full_P_i.astype(int))
+        temp = build_permutation(full_P_i, index)
+        F_i  = build_permutation(true_index, temp)
+        full_P[i, :] = F_i
         
-    return([full_P, P_dict])
+    return([full_P.astype(int), P_dict])
             
     
 from perm_sample_norm_07 import *

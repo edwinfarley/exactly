@@ -142,7 +142,8 @@ def permute_search_normal(df, block, formula, Y, N, I, T, burnin, interval):
     #Remove NaNs outside of current block
     df = pd.concat([df[0:block[0]].dropna(), df[block[0]:block[1]], df[block[1]:].dropna()])
     #N iterations
-    block_size = min(sum(block_df[y1].notnull()), sum(block_df[covariates[0]].notnull()))
+    #sum(block_df[y1].notnull())
+    block_size = sum(block_df[covariates[0]].notnull())
     print(block_size)
     #P: Permutations after I iterations for each set of Betas
     P = np.zeros((N, block_size)).astype(int)
@@ -199,7 +200,9 @@ def permute_search_normal(df, block, formula, Y, N, I, T, burnin, interval):
                     P[0, :] = P_t[:-num_X_missing]
                 elif num_Y_missing:
                     #[np.where(np.isfinite(new_y))]
-                    P[0, :] = P_t[:-num_Y_missing]
+                    temp = np.array(P_t)
+                    temp[np.where(np.isnan(new_y))] = -(block[0]+1)
+                    P[0, :] = temp
                 else:
                     P[0, :] = P_t   
         else:
@@ -214,11 +217,12 @@ def permute_search_normal(df, block, formula, Y, N, I, T, burnin, interval):
                         P[int((t-burnin)/interval), :] = P_t[:-num_X_missing]
                     elif num_Y_missing:
                         #[np.where(np.isfinite(new_y))]
-                        P[int((t-burnin)/interval), :] = P_t[:-num_Y_missing]
+                        temp = np.array(P_t)
+                        temp[np.where(np.isnan(new_y))] = -(block[0]+1)
+                        P[int((t-burnin)/interval), :] = temp
                     else:
                         P[int((t-burnin)/interval), :] = P_t 
-                print(t, P_t)
         #print(df[y1][block[0]:block[1]])
-        print(new_y)
+        #print(new_y)
 
     return([B, P])
